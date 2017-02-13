@@ -20,6 +20,14 @@ Point cloud library (PCL):
 
 http://pointclouds.org/
 
+Interative Closest Point PCL Documentation
+
+http://docs.pointclouds.org/trunk/classpcl_1_1_iterative_closest_point.html
+
+Generalized Iterative Closest Point PCL Documentation
+
+http://docs.pointclouds.org/trunk/classpcl_1_1_generalized_iterative_closest_point.html
+
 ## Rationale
 
 At the arrival of a new scan from the laser range finder (LRF, or laser scanner), several actions need to be undertaken. 
