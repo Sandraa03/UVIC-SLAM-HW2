@@ -28,4 +28,4 @@ add_executable(odometry src/odometry.cpp)
 target_link_libraries(odometry ${catkin_LIBRARIES} ${Eigen_LIBRARIES})
 
 add_executable(odometry_tf src/odometry_tf.cpp)
-target_link_libraries(odometry_tf ${catkin_LIBRARIES})
+target_link_libraries(odometry_tf ${catkin_LIBRARIES} ${Eigen_LIBRARIES})

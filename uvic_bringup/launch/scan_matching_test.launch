@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="rviz" type="rviz" pkg="rviz" args="-d $(find uvic_bringup)/rviz_cfg/stage.rviz"/>
+  <node pkg="stage_ros" type="stageros" name="stageros" args="$(find uvic_bringup)/world/willow.world"/>
+  <node pkg="uvic_scanner" type="scan_conversion" name="scan_conversion" output="screen"/>
+  <node pkg="uvic_scanner" type="kf_select" name="kf_select" output="screen"/>
+  <node pkg="uvic_scanner" type="kf_select_test" name="kf_select_test" output="screen"/>
+  <node pkg="uvic_scanner" type="scan_matching" name="scan_matching" output="screen"/>
+</launch>
