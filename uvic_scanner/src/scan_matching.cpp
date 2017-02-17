@@ -26,6 +26,8 @@
 
 #include <iostream>
 
+
+
 ros::Publisher scan_matching_kf_issuer_pub;
 ros::ServiceClient scan_converter;
 ros::ServiceClient kf_select;
@@ -100,37 +102,46 @@ void laser_callback(const sensor_msgs::LaserScan& input) {
 
 	//### Initialization of Generalized Interative Closest Point from PCL ###
 	//### INSERT INITIALIZATION CALL of type <pcl::PointXYZ, pcl::PointXYZ>
-        //### ???
+        //### 
+        pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
 
 	//### Setting the input for GICP as the new_pointcloud ###
         //### INSERT FUNCTION CALL HERE	
-        //### ???
+        //### 
+        gicp.setInputSource(new_pointcloud);
 
 	//### Setting the output for GICP as the kf_pointcloud ###
         //### INSERT FUNCTION CALL HERE
-        //### ???
+        //### 
+        gicp.setInputTarget(kf_pointcloud);
 
 	//### A target for the converged pointcloud of new_pointcloud and kf_pointcloud ###
         //### INSERT POINTER INITIALIZATION of form pcl::PointCloud<pcl::PointXYZ>
-        //### ???
+        //### 
+        pcl::PointCloud<pcl::PointXYZ>::Ptr converged_pointcloud;
 
 	//### Running alignment on GICP between new_pointcloud and kf_pointcloud ###
         //### INSERT FUNCTION CALL HERE
-        //### ???
+        //### 
+        gicp.align(*converged_pointcloud);
 
 	//### Get the fitness score of the alignment from the GICP object
 	//### The fitness of the alignment between new_pointcloud and kf_pointcloud ###
         //### converged_fitness = 0.0, means 100% match. Scale from 0.0 to 1.0.
 	//### INSERT FUNCTION CALL HERE assigned to "double converged_fitness"
-	//### ???
+	//### 
+        double converged_fitness = gicp.getFitnessScore();
 
 	//### Get the boolean indicate whether the two scans (pointclouds) converged
 	//### INSERT FUNCTION CALL HERE assigned to "bool converged"
-        //### ???
+        //### 
+        bool converged = gicp.hasConverged();
 
 	//### Get the matrix transform between the two scans (pointclouds)
 	//### INSERT FUNCTION CALL assigned to variable of type Eigen::Matrix4f
-	//### ???
+	//### 
+        Eigen::Matrix4f H_transform;
+        H_transform = gicp.getFinalTransformation();
  
         if(converged) {
           ROS_INFO("[scan_matching][SUCCESS] Current scan successfully converged with fake keyframe.");
@@ -138,27 +149,31 @@ void laser_callback(const sensor_msgs::LaserScan& input) {
 	  //### The Delta transformation between the ref scan and the input scan
 	  //### Translate the above "Eigen::Matrix4f transform" into Dx, Dy, Dth
 	  //### Indicating the difference in x, y and rotation between scans
-          //double Dx = transform( ? , ?);
-          //double Dy = transform( ?, ?);
-          //double Dth = atan2( transform( ?, ?), transform( ?, ?) );
+          double Dx = H_transform(3,0);
+          double Dy = H_transform(3,1);
+          double Dth = atan2(H_transform(1,0), H_transform(0,0));
 
 	  //### The Delta transformation in 2D space
           //### EXTRACT THE 2D DELTA FROM THE 3D TRANSFORM ABOVE
-          double k_disp_disp = 0.1;
-          double k_rot_disp = 0.1;
-          double k_rot_rot = 0.1;
+          double k_disp_disp = 0.01;
+          double k_rot_disp = 0.01;
+          double k_rot_rot = 0.01;
 	
 	  //### the covariance of the delta
           //### COMPUTE THE COVARIANCE BASED ON THE FORMULAS IN THE README.md FILE
-          //double Dl = ??;
-          //double sigma_x_squared = ??;
-          //double sigma_y_squared = ??;
-          //double sigma_th_squared = ?;
+          //double Dl = [Dx, Dy, Dth];
+          //double Dd = norm(Dx,Dy);
+          double Dd = sqrt(Dx*Dx+Dy*Dy);
+          double sigma_x_squared = k_disp_disp * Dd;
+          double sigma_y_squared = k_disp_disp * Dd;
+          double sigma_th_squared = k_rot_disp * Dd + k_rot_rot * Dth;
 
-          //Eigen::MatrixXd C_l(6, 6);
-          //C_l( ?, ?) = sigma_x_squared;
-          //C_l( ?, ?) = sigma_y_squared;
-          //C_l( ?, ?) = sigma_th_squared;
+          Eigen::MatrixXd C_l(6, 6);
+          //C_l = diag(sigma_squared_x,sigma_squared_y,sigma_squared_th)
+          C_l(0,0) = sigma_x_squared;
+          C_l(1,1) = sigma_y_squared;
+          C_l(5,5) = sigma_th_squared;
+
 
           double converged_fitness_threshold = 0.15;
           if(converged_fitness > converged_fitness_threshold) {
